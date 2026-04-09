@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>藝術家抽卡</title>
+
+<style>
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-family: sans-serif;
+  text-align: center;
+}
+
+#card {
+  font-size: 42px;
+  margin: 20px;
+}
+
+#artImage {
+  max-width: 80%;
+  max-height: 60vh;
+  display: none;
+  margin-top: 20px;
+}
+</style>
+
+</head>
+<body>
+
+<h2 id="counter">載入中...</h2>
+<div id="card">請稍候</div>
+<img id="artImage">
+
+<script>
+
+let pool = [];
+let currentSet = [];
+let index = 0;
+
+let showingImage = false;
+let currentArtist = "";
+
+// Fisher-Yates 洗牌
+function shuffle(array) {
+  let arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// 載入 artists.txt（避免快取）
+fetch("artists.txt?v=" + Date.now())
+  .then(res => res.text())
+  .then(text => {
+    pool = text.split("\n").map(x => x.trim()).filter(x => x);
+
+    if (pool.length < 50) {
+      alert("藝術家數量需 ≥ 50");
+      return;
+    }
+
+    newRound();
+  });
+
+// 新一輪50題
+function newRound() {
+  currentSet = shuffle(pool).slice(0, 50);
+  index = 0;
+  showingImage = false;
+  nextArtist();
+}
+
+// 顯示下一位藝術家（名字）
+function nextArtist() {
+
+  if (index >= currentSet.length) {
+    newRound();
+    return;
+  }
+
+  currentArtist = currentSet[index];
+
+  document.getElementById("card").innerText = currentArtist;
+  document.getElementById("counter").innerText =
+    `第 ${index + 1} / 50 題`;
+
+  document.getElementById("artImage").style.display = "none";
+
+  showingImage = false;
+  index++;
+}
+
+// 顯示圖片（使用 Unsplash 關鍵字抓圖）
+function showImage() {
+  let img = document.getElementById("artImage");
+
+  let query = encodeURIComponent(currentArtist + " painting");
+
+  img.src = "https://source.unsplash.com/800x600/?" + query;
+
+  img.style.display = "block";
+
+  showingImage = true;
+}
+
+// 點擊控制邏輯
+function nextStep() {
+  if (!currentArtist) return;
+
+  if (showingImage) {
+    nextArtist();
+  } else {
+    showImage();
+  }
+}
+
+// 滑鼠 & 鍵盤控制
+document.body.onclick = nextStep;
+document.body.onkeydown = nextStep;
+
+</script>
+
+</body>
+</html>
